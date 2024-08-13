@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="helpdesk_ticket_form_inherit" model="ir.ui.view">
+        <field name="name">helpdesk.team.form</field>
+        <field name="model">helpdesk.team</field>
+        <field name="inherit_id" ref="helpdesk.helpdesk_team_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@id='self-Service']" position="inside">
+                <div class="col-lg-6 o_setting_box">
+                    <div class="o_setting_left_pane">
+                        <field name="allow_portal_ticket_reopen"/>
+                    </div>
+                    <div class="o_setting_right_pane">
+                        <label for="allow_portal_ticket_reopen"/>
+                        <div class="text-muted">
+                            Allow your customers to Reopen their own tickets
+                        </div>
+                        <div class="mt16" invisible="allow_portal_ticket_reopen == False">
+                            <label for="reopen_stage"/>
+                            <field name="reopen_stage"
+                                   required="allow_portal_ticket_reopen == True"/>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+    <template id="tickets_followup_inherit" inherit_id="helpdesk.tickets_followup">
+        <xpath expr="//div[@id='ticket-nav']" position="before">
+
+            <div t-if="ticket.team_id.allow_portal_ticket_reopen and not ticket.closed_by_partner"
+                 class="flex-grow-1 mt-3">
+                <div class="d-grid flex-sm-nowrap">
+                    <button class="btn btn-secondary pt-1" data-bs-target="#helpdesk_ticket_reopen_modal"
+                            data-bs-toggle="modal">
+                        Reopen Ticket
+                    </button>
+                </div>
+
+                <div class="modal" tabindex="-1" role="dialog" id="helpdesk_ticket_reopen_modal">
+                    <div class="modal-dialog mt-5" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Reopen ticket</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Are you sure you wish to proceed?</p>
+                                <div class="form-group">
+                                    <label for="reopen_reason">Reason</label>
+                                    <textarea id="reopen_reason" class="form-control" rows="3"></textarea>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <a role="button" class="btn btn-primary"
+                                   id="confirm_reopen"
+                                   t-att-data-ticket-id="ticket.id"
+                                   t-att-data-ticket-token="ticket.access_token">Reopen the ticket
+                                </a>
+                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Discard</button>
+                            </div>
+                        </div>
+                    </div>
+                    <script type="text/javascript">
+                        document.addEventListener('DOMContentLoaded', function () {
+                        document.getElementById('confirm_reopen').addEventListener('click', function (event) {
+                        var ticketId = this.getAttribute('data-ticket-id');
+                        var ticketToken = this.getAttribute('data-ticket-token');
+                        var reason = document.getElementById('reopen_reason').value;
+                        var url = '/my/ticket/renew/' + ticketId + '/' + ticketToken;
+
+                        // Create form element
+                        var form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = url;
+
+                        // Add reason input field
+                        var inputReason = document.createElement('input');
+                        inputReason.type = 'hidden';
+                        inputReason.name = 'reason';
+                        inputReason.value = reason;
+                        form.appendChild(inputReason);
+
+                        // Append form to body and submit
+                        document.body.appendChild(form);
+                        form.submit();
+                        });
+                        });
+                    </script>
+                </div>
+            </div>
+        </xpath>
+        <xpath expr="//div[@id='card_body']" position="inside">
+
+            <div class="row mb-4 mt-4">
+                <strong class="col-lg-3">Severity</strong>
+                <span class="col-lg-9" t-field="ticket.severity_id.name"/>
+            </div>
+            <div class="row mb-4 mt-4">
+                <strong class="col-lg-3">Severity Description</strong>
+                <span class="col-lg-9" t-field="ticket.severity_desc"/>
+            </div>
+            <div class="row mb-4 mt-4">
+                <strong class="col-lg-3">Severity Expected Time</strong>
+                <span class="col-lg-9" t-field="ticket.expected_time"
+                      t-options='{"widget": "datetime", "hide_seconds": True}'/>
+            </div>
+        </xpath>
+    </template>
+
+</odoo>
+
